@@ -38,6 +38,12 @@ static int cmd_q(char *args) {
 }
 
 static int cmd_help(char *args);
+static int cmd_si(char *args);
+static int cmd_info(char *args);
+static int cmd_x(char *args);
+static int cmd_p(char *args);
+static int cmd_w(char *args);
+static int cmd_d(char *args);
 
 static struct {
   char *name;
@@ -47,12 +53,68 @@ static struct {
   { "help", "Display informations about all supported commands", cmd_help },
   { "c", "Continue the execution of the program", cmd_c },
   { "q", "Exit NEMU", cmd_q },
+	{ "si", "Step N commands", cmd_si },
+	{ "info", "info r for register, info w for watchpoint", cmd_info },
+	{ "x", "Print 4 bytes data from the given address", cmd_x },
+	{ "p", "", cmd_p },
+	{ "w", "", cmd_w },
+	{ "d", "", cmd_d }
 
   /* TODO: Add more commands */
 
 };
 
 #define NR_CMD (sizeof(cmd_table) / sizeof(cmd_table[0]))
+
+static int cmd_info(char *args)
+{
+  char *arg = strtok(NULL, " ");
+	if (arg == NULL) {
+		Log("no enough arguments");
+		return 0;
+	}
+	if (strcmp(arg, "r") == 0) {
+		printf("eax\t0x%-10x\necx\t0x%-10x\nedx\t0x%-10x\nebx\t0x%-10x\nesp\t0x%-10x\nebp\t0x%-10x\nesi\t0x%-10x\nedi\t0x%-10x\n", cpu.eax, cpu.ecx, cpu.edx, cpu.ebx, cpu.esp, cpu.ebp, cpu.esi, cpu.edi);
+	} else if (strcmp(arg, "w") == 0) {
+		Log("print watchpoint");
+	}
+	return 0;
+}
+
+static int cmd_x(char *args)
+{
+	return 0;
+}
+
+static int cmd_p(char *args)
+{
+	return 0;
+}
+
+static int cmd_w(char *args)
+{
+	return 0;
+}
+
+static int cmd_d(char*args)
+{
+	return 0;
+}
+
+static int cmd_si(char *args)
+{
+	char *arg = strtok(NULL, " ");
+	int n;
+	if (arg == NULL) {
+		n = 1;
+	}
+	else {
+		n = atoi(args);
+	}
+	cpu_exec(n);
+	Log("%d", n); //测试打印n
+	return 0;
+}
 
 static int cmd_help(char *args) {
   /* extract the first argument */
