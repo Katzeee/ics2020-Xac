@@ -8,7 +8,8 @@ refer to http://nju-ics.gitbooks.io/ics2020-programming-assignment/content/
 
 To initialize, run
 ```bash
-bash init.sh subproject-name
+bash init-Xac.sh 
+source ~/.bashrc
 ```
 See `init.sh` for more details.
 
