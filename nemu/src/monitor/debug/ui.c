@@ -109,7 +109,7 @@ static int cmd_x(char *args)
 		sscanf(arg, "%x", &addr);
 		Log("addr is 0x%x", addr);
 		for (int i = 1 ; i <= n ; ++ i) { //连续输出n个
-			word_t result = paddr_read(addr + i, 4); //以四字节为输出格式
+			word_t result = paddr_read(addr + i - 1, 4); //以四字节为输出格式，注意i从1开始，因此此处需要减一
 			printf("0x%08x    ", result);
 			if (i % 4 == 0) { //每输出4个则换行
 				printf("\n");
@@ -124,7 +124,11 @@ static int cmd_x(char *args)
 
 static int cmd_p(char *args)
 {
-	return 0;
+	Log("The expression is %s", args);
+  bool success = false; //默认解析失败
+  word_t result; //存储运算结果
+	result = expr(args, &success);
+	return result;
 }
 
 static int cmd_w(char *args)

@@ -6,8 +6,9 @@
 #include <regex.h>
 
 enum {
-  TK_NOTYPE = 256, TK_EQ,
-
+  TK_NOTYPE = 256,
+	TK_EQ,
+	TK_NUMBER,
   /* TODO: Add more token types */
 
 };
@@ -23,7 +24,13 @@ static struct rule {
 
   {" +", TK_NOTYPE},    // spaces
   {"\\+", '+'},         // plus
-  {"==", TK_EQ},        // equal
+	{"-", '-'},						// minus
+	{"\\*", '*'},					// multiply
+	{"/", '/'},						// divide
+	{"\\(", '('},					// left parentheses 
+	{"\\)", ')'},					// right parentheses 
+	{"==", TK_EQ},        // equal
+	{"[0-9]+", TK_NUMBER}, //numbers
 };
 
 #define NR_REGEX (sizeof(rules) / sizeof(rules[0]) )
@@ -61,8 +68,9 @@ static bool make_token(char *e) {
   regmatch_t pmatch;
 
   nr_token = 0;
+	memset(tokens, 0, sizeof(tokens)); //初始化token数组
 
-  while (e[position] != '\0') {
+  while (e[position] != '\0') { //只要字符串不空
     /* Try all rules one by one. */
     for (i = 0; i < NR_REGEX; i ++) {
       if (regexec(&re[i], e + position, 1, &pmatch, 0) == 0 && pmatch.rm_so == 0) {
@@ -78,10 +86,48 @@ static bool make_token(char *e) {
          * to record the token in the array `tokens'. For certain types
          * of tokens, some extra actions should be performed.
          */
-
+				//char substr[32] = { 0 };
+				//strncpy(substr, substr_start, substr_len);
         switch (rules[i].token_type) {
-          default: TODO();
+					case '+': 
+						tokens[nr_token].type = '+';
+						strncpy(tokens[nr_token].str, substr_start, substr_len);
+						break;
+					case '-':
+						tokens[nr_token].type = '-';
+						strncpy(tokens[nr_token].str, substr_start, substr_len);
+						break;
+					case '*':
+						tokens[nr_token].type = '*';
+						strncpy(tokens[nr_token].str, substr_start, substr_len);
+						break;
+					case '/':
+						tokens[nr_token].type = '/';
+						strncpy(tokens[nr_token].str, substr_start, substr_len);
+						break;
+					case TK_NUMBER:
+						tokens[nr_token].type = TK_NUMBER;
+						if(substr_len <= 32) {
+						  strncpy(tokens[nr_token].str, substr_start, substr_len);
+							break;
+						} else {
+							Log("Number is too large!");
+							return false;
+						}
+					case '(':
+						tokens[nr_token].type = '(';
+						strncpy(tokens[nr_token].str, substr_start, substr_len);
+						break;
+					case ')':
+						tokens[nr_token].type = ')';
+						strncpy(tokens[nr_token].str, substr_start, substr_len);
+						break;
+					case TK_NOTYPE:
+						-- nr_token; //检测到空格时需要减去1抵消下面的加1
+						break;
+          default: break;
         }
+				++ nr_token; //每次处理完一个便将下标+1
 
         break;
       }
@@ -104,7 +150,24 @@ word_t expr(char *e, bool *success) {
   }
 
   /* TODO: Insert codes to evaluate the expression. */
-  TODO();
 
   return 0;
 }
+
+bool check_parentheses(int p, int q) {
+	return true;
+}
+
+word_t eval(int p, int q) {
+	if (q < p) {
+		assert(0);
+	} else if (p == q) {
+		return 0;
+	} else if (check_parentheses(p, q) == true) {
+		return eval(p + 1, q - 1);
+	} else {
+	}
+	return 0;
+}
+
+

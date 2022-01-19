@@ -69,7 +69,7 @@ paddr_t addr;
 sscanf(arg, "%x", &addr);
 Log("addr is 0x%x", addr);
 for (int i = 1 ; i <= n ; ++ i) {
-	word_t result = paddr_read(addr + i, 4);
+	word_t result = paddr_read(addr + i - 1, 4);
 	printf("0x%08x    ", result);
 	if (i % 4 == 0) {
 		printf("\n");
@@ -77,4 +77,124 @@ for (int i = 1 ; i <= n ; ++ i) {
 }
 printf("\n");
 ```
+## 表达式求值
+### 词法分析
+首先需要在`./nemu/src/monitor/debug/expr.c`中补全算术表达式的正则表达式并添加`token_type`
+```c
+enum {
+  TK_NOTYPE = 256,
+	TK_EQ,
+	TK_NUMBER,
+};
+
+static struct rule {
+  char *regex;
+  int token_type;
+} rules[] = {
+
+  {" +", TK_NOTYPE},    // spaces
+  {"\\+", '+'},         // plus
+	{"-", '-'},						// minus
+	{"/", '/'},						// divide
+  {"==", TK_EQ},        // equal
+	{"\\*", '*'},					// multiply
+	{"\\(", '('},					// left parentheses
+	{"\\)", ')'},					// right parentheses
+	{"[0-9]+", TK_NUMBER}, //numbers
+}
+```
+注意`+`的正则表达式是`\+`且c中字符串`\`写为`"\\"`因此加对应`"\\+"`
+之后在`make_token`函数中补全代码，首先是每次进入时初始化`token`数组，补全switch语句，并在每次匹配上之后将数组下标加一，注意匹配到空格时需要减一再加一保证数组下标不变
+```c
+static bool make_token(char *e) {
+  int position = 0;
+  int i;
+  regmatch_t pmatch;
+
+  nr_token = 0;
+	memset(tokens, 0, sizeof(tokens));
+
+  while (e[position] != '\0') {
+    /* Try all rules one by one. */
+    for (i = 0; i < NR_REGEX; i ++) {
+      if (regexec(&re[i], e + position, 1, &pmatch, 0) == 0 && pmatch.rm_so == 0) {
+        char *substr_start = e + position;
+        int substr_len = pmatch.rm_eo;
+
+        Log("match rules[%d] = \"%s\" at position %d with len %d: %.*s",
+            i, rules[i].regex, position, substr_len, substr_len, substr_start);
+
+        position += substr_len;
+
+        /* TODO: Now a new token is recognized with rules[i]. Add codes
+         * to record the token in the array `tokens'. For certain types
+         * of tokens, some extra actions should be performed.
+         */
+				//char substr[32] = { 0 };
+				//strncpy(substr, substr_start, substr_len);
+        switch (rules[i].token_type) {
+					case '+': 
+						tokens[nr_token].type = '+';
+						strncpy(tokens[nr_token].str, substr_start, substr_len);
+						break;
+					case '-':
+						tokens[nr_token].type = '-';
+						strncpy(tokens[nr_token].str, substr_start, substr_len);
+						break;
+					case '*':
+						tokens[nr_token].type = '*';
+						strncpy(tokens[nr_token].str, substr_start, substr_len);
+						break;
+					case '/':
+						tokens[nr_token].type = '/';
+						strncpy(tokens[nr_token].str, substr_start, substr_len);
+						break;
+					case TK_NUMBER:
+						tokens[nr_token].type = TK_NUMBER;
+						if(substr_len <= 32) {
+						  strncpy(tokens[nr_token].str, substr_start, substr_len);
+							break;
+						} else {
+							Log("Number is too large!");
+							return 0;
+						}
+					case '(':
+						tokens[nr_token].type = '(';
+						strncpy(tokens[nr_token].str, substr_start, substr_len);
+						break;
+					case ')':
+						tokens[nr_token].type = ')';
+						strncpy(tokens[nr_token].str, substr_start, substr_len);
+						break;
+					case TK_NOTYPE:
+						break;
+          default: break;
+        }
+				++ nr_token;
+
+        break;
+      }
+    }
+
+    if (i == NR_REGEX) {
+      printf("no match at position %d\n%s\n%*.s^\n", position, e, position, "");
+      return false;
+    }
+  }
+
+  return true;
+}
+
+```
+测试采用`cmd_p`调用`expr`函数，`expr`调用`make_token`函数
+```c
+static int cmd_p(char *args)
+{
+  bool success = false;
+  word_t result;
+	result = expr(args, &success);
+	return result;
+}
+```
+在测试`make_token`函数的过程中，发现如果有空格则会使表达式无法识别，本以为是`switch`的问题，经检查才发现是如果还和之前的`cmd_info`等一样采取`strtok`来传递`expr`会导致空格作为分隔符无法获得后面的所有参数，因此直接传递`args`作为参数
 
