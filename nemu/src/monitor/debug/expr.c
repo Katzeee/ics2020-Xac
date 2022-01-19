@@ -33,6 +33,9 @@ static struct rule {
 	{"[0-9]+", TK_NUMBER}, //numbers
 };
 
+
+bool check_parentheses(int, int);
+
 #define NR_REGEX (sizeof(rules) / sizeof(rules[0]) )
 
 static regex_t re[NR_REGEX] = {};
@@ -148,13 +151,30 @@ word_t expr(char *e, bool *success) {
     *success = false;
     return 0;
   }
-
+	Log("%d", check_parentheses(0, nr_token-1));
   /* TODO: Insert codes to evaluate the expression. */
 
   return 0;
 }
 
 bool check_parentheses(int p, int q) {
+	int n = 0; //用来记录未被匹配的左括号数量
+	for (int i = p ; i < q ; i++) { //检查到倒数第二个位置
+		if (tokens[i].type == '(') {
+			++ n;
+		} else if (tokens[i].type == ')') {
+			-- n;
+		}
+		//每完成一次比较后检查n的值
+		if (n < 0) { //说明出现了'())'的情况
+			return false;
+		} else if (n == 0) { //说明开头的第一个括号并不是与最后一个括号匹配
+			return false;
+		}
+	}
+	if (n != 1 || tokens[q].type != ')') { //全部检查完毕后若n不为1则说明不匹配，因为只检查到了倒数第二个位置，还需检查最后一个位置是不是右括号
+		return false;
+	}
 	return true;
 }
 
