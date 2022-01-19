@@ -50,5 +50,31 @@ static int cmd_si(char *args)
 
 ```
 ### `cmd_info`
-实现info r非常简单，只需注意%-10x可以左对齐并占10个位置以16进制输出数据即可
 要注意对arg为NULL的检查必须放在最前面，因为没有办法对一个NULL进行strcmp，以及同时要注意r和w需要用双引号，这样才会被编译器解释为`char*`，用单引号将会被解释为`int`
+#### `info r`
+实现info r非常简单，只需注意%-10x可以左对齐并占10个位置以16进制输出数据即可
+调用`./nemu/src/isa/x86/reg.c`中的`isa_reg_display()`完成
+其代码应为
+```c
+void isa_reg_display() {
+		printf("eax\t0x%-10x\necx\t0x%-10x\nedx\t0x%-10x\nebx\t0x%-10x\nesp\t0x%-10x\nebp\t0x%-10x\nesi\t0x%-10x\nedi\t0x%-10x\n", cpu.eax, cpu.ecx, cpu.edx, cpu.ebx, cpu.esp, cpu.ebp, cpu.esi, cpu.edi);
+}
+```
+### `cmd_x`
+想要printf一个`char *arg`的变量，采取`printf("%s", arg);`的形式输出，因为字符串在直接作为参数传递时会被解释成首字符的地址
+将0输出成00即采用`%02x`的形式，右对齐，宽度为2且不够时补0
+若考虑表达式仅为一个十六进制数，则可以直接调用`paddr_read`进行内存的访问，注意需要包含头文件`<memory/paddr.h>`部分代码如下
+```c
+paddr_t addr;
+sscanf(arg, "%x", &addr);
+Log("addr is 0x%x", addr);
+for (int i = 1 ; i <= n ; ++ i) {
+	word_t result = paddr_read(addr + i, 4);
+	printf("0x%08x    ", result);
+	if (i % 4 == 0) {
+		printf("\n");
+	}
+}
+printf("\n");
+```
+

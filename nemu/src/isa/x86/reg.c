@@ -42,6 +42,7 @@ void reg_test() {
 }
 
 void isa_reg_display() {
+		printf("eax\t0x%-10x\necx\t0x%-10x\nedx\t0x%-10x\nebx\t0x%-10x\nesp\t0x%-10x\nebp\t0x%-10x\nesi\t0x%-10x\nedi\t0x%-10x\n", cpu.eax, cpu.ecx, cpu.edx, cpu.ebx, cpu.esp, cpu.ebp, cpu.esi, cpu.edi);
 }
 
 word_t isa_reg_str2val(const char *s, bool *success) {
