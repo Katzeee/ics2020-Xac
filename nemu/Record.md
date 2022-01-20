@@ -197,4 +197,68 @@ static int cmd_p(char *args)
 }
 ```
 在测试`make_token`函数的过程中，发现如果有空格则会使表达式无法识别，本以为是`switch`的问题，经检查才发现是如果还和之前的`cmd_info`等一样采取`strtok`来传递`expr`会导致空格作为分隔符无法获得后面的所有参数，因此直接传递`args`作为参数
-
+### 递归求值
+首先实现`check_parentheses()`，只需考虑左右括号是否匹配以及第一个左括号匹配的是不是最右边的括号，代码如下，注意总共有三种情况考虑，其中两种是good expression
+```c
+int check_parentheses(int p, int q) {
+	/*返回-1表示bad expression，返回0表示good expression但不是被括号包裹，范围1表示good expression且被括号包裹*/
+	int n = 0; //用来记录未被匹配的左括号数量
+	bool flag = 0; 
+	for (int i = p ; i < q ; i++) { //检查到倒数第二个位置
+		if (tokens[i].type == '(') {
+			++ n;
+		} else if (tokens[i].type == ')') {
+			-- n;
+		}
+		//每完成一次比较后检查n的值
+		if (n < 0) { //说明出现了'())'的情况
+			return -1; //bad expession
+		} else if (tokens[p].type == '(' && n == 0) { 
+			//说明开头的第一个括号被中间的右括号匹配了，并不是与最后一个括号匹配
+			//此时要确保第一个是左括号，但是后面的表达式依然有可能是bad expression
+			//因此此时不能直接return 0;应设flag变量去通知最后不能return 1;
+			flag = 1;
+		}
+	}
+	if (n == 0 && tokens[q].type != '(' && tokens[q].type != ')') { //表达式没有括号或者前面的括号匹配完了
+		return 0;
+	} else if (n != 1) { //在前面有括号的情况下全部检查完毕后若n不为1则说明不匹配
+		return -1; //bad expression
+	} else if (tokens[q].type != ')') { //在n=1的情况下，因为只检查到了倒数第二个位置，还需检查最后一个位置是不是右括号，以及这个右括号是不是和第一个左括号匹配
+		return -1;
+	} else if (flag == 1 || tokens[p].type != '(') { //说明最后的右括号不与第一个左括号匹配
+		//第一个不是左括号，或者第一个是左括号但是被匹配掉了的情况
+		return 0;
+	}
+	return 1;
+}
+```
+获取主运算符的位置，首先括号内的不可能是主运算符，再就是加减优先级低，只要出现加减一定是比之前的任何运算符更晚计算，对于乘除，只有当前面所出现运算不是加减才可以移动主运算符指针
+```c
+int main_op(int p, int q) { //返回主运算符的下标
+	int n = 0; //用来判断在括号内还是括号外
+	int k = -1; //用来记录主运算符的位置，默认没有运算符
+	for (int i = p ; i <= q ; ++ i) {
+		if (tokens[i].type == '(') {
+			++ n;
+		} else if (tokens[i].type == ')') {
+			-- n;
+		}
+		if (n != 0) { //括号内的运算符没有意义
+			continue;
+		}
+		switch (tokens[i].type) {
+			case '+':
+			case '-': k = i; break;
+			case '*':
+			case '/': 
+				if (k == -1 || tokens[k].type =='*' || tokens[k].type == '/') {
+					k = i;
+				}
+				break;
+			default: break;
+		}
+	}
+	return k;
+}
+```
