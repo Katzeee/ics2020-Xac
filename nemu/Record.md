@@ -262,3 +262,37 @@ int main_op(int p, int q) { //返回主运算符的下标
 	return k;
 }
 ```
+### 表达式求值测试
+修改`nemu/tools/gen-expr/gen-expr.c`中的函数
+首先是定义每次往buf的什么位置写入数据的index，bufp，同时注意在main函数中，每次循环结束都需要初始化buf和bufp
+对于`gen_rand_expr()`有
+```c
+static inline void gen_rand_expr() {
+	switch(rand() % 3) {
+		//case 0: buf[bufp++] = '1'; break;
+    case 0: gen_num(); break;
+
+		case 1: buf[bufp++] = '('; gen_rand_expr(); buf[bufp++] = ')'; break;
+		default: gen_rand_expr(); gen_rand_op(); gen_rand_expr(); break;
+	}
+}
+```
+对于`gen_rand_num()`有
+```c
+static inline void gen_num() {
+	sprintf(buf + bufp, "%u", rand() % 10000);
+	bufp = strlen(buf);
+}
+```
+对于`gen_rand_op()`有
+```c
+static inline void gen_rand_op() {
+	switch(rand() % 4) {
+		case 0: buf[bufp++] = '+'; break;
+		case 1: buf[bufp++] = '-'; break;
+		case 2: buf[bufp++] = '*'; break;
+		case 3: buf[bufp++] = '/'; break;
+	}
+}
+```
+同时要注意对于`fscanf(fp, "%d", &result)`的输出需要检查，若输出为-1则说明读取失败 

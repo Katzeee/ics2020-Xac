@@ -6,6 +6,7 @@
 #include <string.h>
 
 // this should be enough
+static int bufp = 0; //用于指示每次往哪里写数据
 static char buf[65536] = {};
 static char code_buf[65536 + 128] = {}; // a little larger than `buf`
 static char *code_format =
@@ -16,8 +17,28 @@ static char *code_format =
 "  return 0; "
 "}";
 
+static inline void gen_rand_op() {
+	switch(rand() % 4) {
+		case 0: buf[bufp++] = '+'; break;
+		case 1: buf[bufp++] = '-'; break;
+		case 2: buf[bufp++] = '*'; break;
+		case 3: buf[bufp++] = '/'; break;
+	}
+}
+
+static inline void gen_num() {
+	sprintf(buf + bufp, "%u", rand() % 10000);
+	bufp = strlen(buf);
+}
+
 static inline void gen_rand_expr() {
-  buf[0] = '\0';
+	switch(rand() % 3) {
+		//case 0: buf[bufp++] = '1'; break;
+    case 0: gen_num(); break;
+
+		case 1: buf[bufp++] = '('; gen_rand_expr(); buf[bufp++] = ')'; break;
+		default: gen_rand_expr(); gen_rand_op(); gen_rand_expr(); break;
+	}
 }
 
 int main(int argc, char *argv[]) {
@@ -29,8 +50,11 @@ int main(int argc, char *argv[]) {
   }
   int i;
   for (i = 0; i < loop; i ++) {
-    gen_rand_expr();
+		//每次循环都需要初始化buf和bufp
+		memset(buf, '\0', strlen(buf));
+		bufp = 0;
 
+    gen_rand_expr();
     sprintf(code_buf, code_format, buf);
 
     FILE *fp = fopen("/tmp/.code.c", "w");
@@ -39,14 +63,21 @@ int main(int argc, char *argv[]) {
     fclose(fp);
 
     int ret = system("gcc /tmp/.code.c -o /tmp/.expr");
-    if (ret != 0) continue;
+    if (ret != 0) {
+			i--;
+			continue;
+		}
 
     fp = popen("/tmp/.expr", "r");
     assert(fp != NULL);
 
     int result;
-    fscanf(fp, "%d", &result);
-    pclose(fp);
+    if (fscanf(fp, "%d", &result) == -1) {
+			pclose(fp);
+			i--;
+			continue;
+		}
+		pclose(fp);
 
     printf("%u %s\n", result, buf);
   }
