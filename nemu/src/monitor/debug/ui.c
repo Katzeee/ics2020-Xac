@@ -56,7 +56,7 @@ static struct {
   { "q", "Exit NEMU", cmd_q },
 	{ "si", "Step N commands", cmd_si },
 	{ "info", "info r for register, info w for watchpoint", cmd_info },
-	{ "x", "Print continuous 4N bytes data from the given address", cmd_x },
+	{ "x", "Print continuous 4N bytes data from the given address\nexample:x 2 0x1000000", cmd_x },
 	{ "p", "Print the answer of the expression", cmd_p },
 	{ "w", "Pause the program when the value of the watchpoint changes", cmd_w },
 	{ "d", "Delete the Nth watchpoint", cmd_d }
