@@ -296,3 +296,51 @@ static inline void gen_rand_op() {
 }
 ```
 同时要注意对于`fscanf(fp, "%d", &result)`的输出需要检查，若输出为-1则说明读取失败 
+修改`main()`函数进行表达式求值的验证，在验证过程中发现若将`expr`在初始化之前调用则会发生Segmentation fault,不明原因，因此将验证放在初始化之后进行,同时注意修改。`nemu/tools/gen-expr/gen-expr.c`中token数组的长度。
+对m`main()`函数进行如下修改，对表达式求值进行检验
+```
+#include"./monitor/debug/expr.h"
+#include<stdio.h>
+#include<stdlib.h>
+void init_monitor(int, char *[]);
+void engine_start();
+int is_exit_status_bad();
+
+int main(int argc, char *argv[]) {	
+	  /* Initialize the monitor. */
+  init_monitor(argc, argv);
+
+  /* Start engine. */
+  engine_start();
+
+	FILE* fp = NULL;	
+	fp = fopen("/home/xac/dev/ics2020-Xac/nemu/tools/gen-expr/input", "r");
+	if (fp == NULL)
+	{
+		printf("null\n");
+		exit(EXIT_FAILURE);
+	}
+
+	
+	int res;
+	char* exp = (char*)malloc(sizeof(char)*1000);
+	char* buf = (char*)malloc(sizeof(char)*1000);
+
+	size_t len;
+	ssize_t read;
+	bool success = false;
+	if((read = getline(&buf, &len, fp)) != -1)
+	{
+			printf("getline:%zu\n", read);
+			sscanf(buf, "%d %s", &res, exp);
+			printf("%d\n", res);
+			expr("-2955", &success);
+	}
+
+
+  return is_exit_status_bad();
+}
+```
+注意此时对单目运算符`-`和`*`还没有进行区分
+## 监视点
+### 完善表达式求值
