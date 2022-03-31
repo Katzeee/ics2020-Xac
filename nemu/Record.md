@@ -63,7 +63,7 @@ void isa_reg_display() {
 ### `cmd_x`
 想要printf一个`char *arg`的变量，采取`printf("%s", arg);`的形式输出，因为字符串在直接作为参数传递时会被解释成首字符的地址
 将0输出成00即采用`%02x`的形式，右对齐，宽度为2且不够时补0
-若考虑表达式仅为一个十六进制数，则可以直接调用`paddr_read`进行内存的访问，注意需要包含头文件`<memory/paddr.h>`部分代码如下
+若考虑表达式仅为一个十六进制数，则可以直接调用`paddr_read`进行内存的访问，注意需要包含头文件`<memory/paddr.h>``cmd_x()`的部分代码如下
 ```c
 paddr_t addr;
 sscanf(arg, "%x", &addr);
@@ -76,6 +76,29 @@ for (int i = 1 ; i <= n ; ++ i) {
 	}
 }
 printf("\n");
+```
+打印寄存器中的值调用`/nemu/src/isa/x86`里的`word_t isa_reg_str2val(const char *s, bool *success)`函数，接收寄存器的名字，返回其值，只需要遍历所有寄存器名称并一一比较即可，若失败则将success置为false，代码如下
+```c
+word_t isa_reg_str2val(const char *s, bool *success) {
+	//通过名字取寄存器值
+	*success = false;
+	for(int i = 0 ; i < 8 ; i++)
+	{
+		if(strcmp(regsl[i], s) == 0)
+		{
+			*success = true;
+			return reg_l(i);
+		}
+	}
+  return 0;
+}
+```
+对于`cmd_x`,需要考虑本次输入是要查询内存的值还是寄存器的值,可以根据第二个参数的前两位判断是哪一个再进行下一步操作,访问内存的部分上面已经给出，下面给出访问寄存器部分的代码
+```c
+bool success = false;
+word_t reg_value = isa_reg_str2val(arg + 1, &success);
+Log("%x", reg_value);
+
 ```
 ## 表达式求值
 ### 词法分析

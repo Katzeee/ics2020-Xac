@@ -100,9 +100,12 @@ static int cmd_x(char *args)
 	Log("The first two letter is %s", arghead);
 	if (arghead[0] == '$') {
 		Log("register branch"); //寄存器
-		char regname[6] = "R_";
-	  strncat(regname, arg + 1, 3); //防止缓冲区溢出
-		Log("%s", regname);
+		//char regname[6] = "R_";
+	  //strncat(regname, arg + 1, 3); //防止缓冲区溢出
+		//Log("%s", regname);
+		bool success = false;
+		word_t reg_value = isa_reg_str2val(arg + 1, &success);
+		Log("%x", reg_value);
 	} else if (strcmp(arghead, "0x") == 0) {
 		Log("base 16 branch"); //16进制数
 		paddr_t addr;

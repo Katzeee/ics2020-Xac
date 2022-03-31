@@ -47,5 +47,14 @@ void isa_reg_display() {
 
 word_t isa_reg_str2val(const char *s, bool *success) {
 	//通过名字取寄存器值
+	*success = false;
+	for(int i = 0 ; i < 8 ; i++) //遍历所有寄存器
+	{
+		if(strcmp(regsl[i], s) == 0) //对名字进行比较
+		{
+			*success = true;
+			return reg_l(i);
+		}
+	}
   return 0;
 }
