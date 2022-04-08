@@ -6,6 +6,8 @@ in Department of Computer Science and Technology, Nanjing University.
 For the guide of this programming assignment,
 refer to http://nju-ics.gitbooks.io/ics2020-programming-assignment/content/
 
+This project is just for learning
+
 To initialize, run
 ```bash
 bash init-Xac.sh 
