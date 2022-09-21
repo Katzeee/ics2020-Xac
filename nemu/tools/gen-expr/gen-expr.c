@@ -21,17 +21,35 @@ static inline void gen_rand_op() {
 	switch(rand() % 4) {
 		case 0: buf[bufp++] = '+'; break;
 		case 1: buf[bufp++] = '-'; break;
-		case 2: buf[bufp++] = '*'; break;
+		case 2: 
+      if (rand() % 3) {
+        buf[bufp++] = '*'; 
+      } else {
+        gen_rand_op();
+      }
+      break;
 		case 3: buf[bufp++] = '/'; break;
 	}
 }
 
 static inline void gen_num() {
-	sprintf(buf + bufp, "%u", rand() % 10000);
-	bufp = strlen(buf);
+  int len = rand() % 5;
+  buf[bufp++] = rand()%9 + 49;
+  switch (len - 1) {
+    case 4: buf[bufp++] = rand()%10 + 48;
+    case 3: buf[bufp++] = rand()%10 + 48;
+    case 2: buf[bufp++] = rand()%10 + 48;
+    case 1: buf[bufp++] = rand()%10 + 48;
+    default: 
+      buf[bufp++] = rand()%10 + 48;
+      buf[bufp++] = 'U';
+  }
 }
 
 static inline void gen_rand_expr() {
+  if (bufp > 60000) {
+    return;
+  }
 	switch(rand() % 3) {
 		//case 0: buf[bufp++] = '1'; break;
     case 0: gen_num(); break;
@@ -44,7 +62,7 @@ static inline void gen_rand_expr() {
 int main(int argc, char *argv[]) {
   int seed = time(0);
   srand(seed);
-  int loop = 10;
+  int loop = 2;
   if (argc > 1) {
     sscanf(argv[1], "%d", &loop);
   }
@@ -56,13 +74,19 @@ int main(int argc, char *argv[]) {
 
     gen_rand_expr();
     sprintf(code_buf, code_format, buf);
+    for (int i = 0; i < strlen(buf); i++) {
+      if (buf[i] == 'U') {
+        buf[i] = ' ';
+      }
+    }
 
     FILE *fp = fopen("/tmp/.code.c", "w");
     assert(fp != NULL);
     fputs(code_buf, fp);
     fclose(fp);
 
-    int ret = system("gcc /tmp/.code.c -o /tmp/.expr");
+    //int ret = system("gcc /tmp/.code.c -ftrapv -o /tmp/.expr");
+    int ret = system("gcc /tmp/.code.c -Wall -Werror -o /tmp/.expr > /dev/null");
     if (ret != 0) {
 			i--;
 			continue;

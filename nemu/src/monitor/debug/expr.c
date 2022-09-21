@@ -67,7 +67,7 @@ typedef struct token {
   char str[32];
 } Token;
 
-static Token tokens[24] __attribute__((used)) = {};
+static Token tokens[2000] __attribute__((used)) = {};
 static int nr_token __attribute__((used))  = 0;
 
 static bool make_token(char *e) {
@@ -157,7 +157,7 @@ word_t expr(char *e, bool *success) {
     return 0;
   }
   for (int i = 0; i < nr_token - 1; i++) {
-    if (tokens[i].type == '-' && (i == 0 || tokens[i-1].type != TK_NUMBER)) {
+    if (tokens[i].type == '-' && (i == 0 || (tokens[i-1].type != TK_NUMBER && tokens[i-1].type != ')'))) {
       tokens[i].type = TK_NEGATIVE;
     }
   }
@@ -171,9 +171,9 @@ word_t expr(char *e, bool *success) {
 	} else if (check_res == 1) {
 		Log("The whole expression is in parentheses");
 	}
-	uint32_t eval_res = eval(0, nr_token - 1);
+	word_t eval_res = eval(0, nr_token - 1);
 	Log("The result of the expression is %d",eval_res);
-  return 0;
+  return eval_res;
 }
 
 int check_parentheses(int p, int q) {
@@ -262,8 +262,8 @@ word_t eval(int p, int q) {
       case TK_NEGATIVE: return -eval(op + 1, q);
       default: 
     }
-    int val1 = eval(p, op - 1);
-    int val2 = eval(op + 1, q);
+    word_t val1 = eval(p, op - 1);
+    word_t val2 = eval(op + 1, q);
 		switch (tokens[op].type) {
 			case '+': return val1 + val2;
 			case '-': return val1 - val2;
