@@ -10,6 +10,8 @@ enum {
   TK_NOTYPE = 256,
 	TK_EQ,
 	TK_NUMBER,
+  TK_DEFER,
+  TK_NEGATIVE,
   /* TODO: Add more token types */
 
 };
@@ -154,6 +156,11 @@ word_t expr(char *e, bool *success) {
     *success = false;
     return 0;
   }
+  for (int i = 0; i < nr_token - 1; i++) {
+    if (tokens[i].type == '-' && (i == 0 || tokens[i-1].type != TK_NUMBER)) {
+      tokens[i].type = TK_NEGATIVE;
+    }
+  }
   /* TODO: Insert codes to evaluate the expression. */
 	int check_res = check_parentheses(0, nr_token-1); 
 	if (check_res == -1) {
@@ -225,12 +232,16 @@ int main_op(int p, int q) { // return the index of main operator 返回主运算
 			case '-': k = i; break; // + and - have lowest priority 位置靠后的加减运算符必改变k指针位置
 			case '*':
 			case '/': 
-				if (k == -1 || tokens[k].type =='*' || tokens[k].type == '/') {
+				if (k == -1 || tokens[k].type =='*' || tokens[k].type == '/' || tokens[k].type == TK_NEGATIVE) {
 					// * and / is the main op only if the main op now is not + or -
 					// 位置靠后的乘除运算符需要进行判断当前所指的运算符是否不是加减
 					k = i;
 				}
 				break;
+      case TK_NEGATIVE:
+				if (k == -1) {
+          k = i;
+        }
 			default: break;
 		}
 	}
@@ -246,9 +257,13 @@ word_t eval(int p, int q) {
 	} else if (check_parentheses(p, q) == 1) {
 		return eval(p + 1, q - 1);
 	} else {
-		int op = main_op(p, q);
-		int val1 = eval(p, op - 1);
-		int val2 = eval(op + 1, q);
+    int op = main_op(p, q);
+    switch (tokens[op].type) {
+      case TK_NEGATIVE: return -eval(op + 1, q);
+      default: 
+    }
+    int val1 = eval(p, op - 1);
+    int val2 = eval(op + 1, q);
 		switch (tokens[op].type) {
 			case '+': return val1 + val2;
 			case '-': return val1 - val2;
